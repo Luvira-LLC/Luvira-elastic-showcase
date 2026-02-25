@@ -5,6 +5,7 @@ import { Text } from "@/components/ui/text";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { cn } from "@/lib/utils";
 import { DrawerActions, useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { CalendarDays, Menu, Mic } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -27,19 +28,13 @@ const SUGGESTION_TAGS = [
 
 export default function HomeScreen() {
   const [prompt, setPrompt] = useState("");
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
-  const hasText = prompt.trim().length > 0;
 
   const handleTagPress = (text: string) => {
     setPrompt(text);
   };
-
-  const handleGenerate = () => {
-    if (!hasText) return;
-    console.log("Generate insight:", prompt);
-  };
-
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
   };
@@ -131,72 +126,12 @@ export default function HomeScreen() {
             variant="outline"
             size="icon"
             className="bg-primary border-0 p-8 rounded-full"
-            // onPress={() => router.navigate("/(root)/recording")}
+            onPress={() => router.navigate("/(root)/recording")}
             accessibilityLabel="Start voice recording"
             accessibilityHint="Opens the recording screen to capture audio"
           >
             <Icon as={Mic} size={28} className="text-white" />
           </Button>
-          {/* <View className="relative mb-3">
-            <Textarea
-              value={prompt}
-              onChangeText={setPrompt}
-              placeholder="Enter text here"
-              numberOfLines={1}
-              className={cn(
-                "pr-12 min-h-12 rounded-xl border-0 outline-none shadow-transparent tracking-widest",
-                colorScheme === "dark" ? "bg-zinc-800/50" : "bg-white",
-              )}
-              style={{ fontFamily: "Urbanist_400Regular" }}
-            />
-            <Pressable
-              className="absolute right-3 top-3"
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Voice input"
-            >
-              <Mic
-                size={22}
-                color={colorScheme === "dark" ? "#a1a1a1" : "#9ca3af"}
-              />
-            </Pressable>
-          </View>
-          <Button
-            onPress={handleGenerate}
-            disabled={!hasText}
-            accessibilityLabel="Generate Insight"
-            className={cn(
-              "w-full rounded-full h-14",
-              hasText
-                ? "bg-primary active:bg-primary/90"
-                : colorScheme === "dark"
-                  ? "bg-zinc-800"
-                  : "bg-gray-100",
-            )}
-          >
-            <Sparkles
-              size={20}
-              color={
-                hasText
-                  ? "#fff"
-                  : colorScheme === "dark"
-                    ? "#a1a1a1"
-                    : "#9ca3af"
-              }
-            />
-            <Text
-              className={cn(
-                "text-lg font-semibold ml-1 tracking-wide",
-                hasText
-                  ? "text-primary-foreground"
-                  : colorScheme === "dark"
-                    ? "text-zinc-400"
-                    : "text-gray-400",
-              )}
-            >
-              Generate Insight
-            </Text>
-          </Button> */}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
