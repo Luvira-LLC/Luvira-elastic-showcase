@@ -1,7 +1,8 @@
+import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import ScreenLayout from "@/components/layouts/screen-layout";
 import Waveform from "@/components/recording/waveform";
@@ -14,7 +15,7 @@ import { useNotificationPermissions } from "@/hooks/use-notification-permission"
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useStreamProcessing } from "@/hooks/use-stream-processing";
 import { cn } from "@/lib/utils";
-import { Pause, Play, Square } from "lucide-react-native";
+import { Mic, Pause, Play, Sparkles, Square, X } from "lucide-react-native";
 
 const formatTime = (seconds: number): string => {
   const hrs = Math.floor(seconds / 3600);
@@ -23,12 +24,31 @@ const formatTime = (seconds: number): string => {
   return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 };
 
+const formatRecordingDate = (): string => {
+  const now = new Date();
+  const month = now.toLocaleString("en-US", { month: "short" });
+  const day = now.getDate();
+  const hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHour = hours % 12 || 12;
+  return `${month} ${day} - ${displayHour}:${minutes}${ampm}`;
+};
+
 export default function Recording() {
   const router = useRouter();
   const [value, setValue] = useState<"waveform" | "transcription">("waveform");
   const [countdown, setCountdown] = useState<number | null>(3);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasStartedRef = useRef(false);
+
+  // Bottom sheet state
+  const sheetRef = useRef<TrueSheet>(null);
+  const [savedAudioUri, setSavedAudioUri] = useState<string | null>(null);
+  const [insightTitle, setInsightTitle] = useState("");
+  const [recordedDuration, setRecordedDuration] = useState(0);
+  const [recordedDate, setRecordedDate] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { handlePermissionRequest: handleAudioPermission } =
     useAudioPermissions();
@@ -45,6 +65,13 @@ export default function Recording() {
     resetTranscription,
   } = useSpeechRecognition();
 
+  // When recording completes, save the URI and show the bottom sheet
+  const handleRecordingComplete = useCallback(async (audioUri: string) => {
+    setSavedAudioUri(audioUri);
+    setRecordedDate(formatRecordingDate());
+    await sheetRef.current?.present(0);
+  }, []);
+
   const {
     recording,
     timer,
@@ -56,7 +83,7 @@ export default function Recording() {
     resumeRecording,
     levels,
   } = useAudioRecording({
-    onRecordingComplete: processAudioFile,
+    onRecordingComplete: handleRecordingComplete,
     setupNotification,
     dismissNotification,
   });
@@ -85,10 +112,28 @@ export default function Recording() {
   ]);
 
   const handleStop = useCallback(async () => {
+    setRecordedDuration(timer);
     stopTranscription();
     await stopRecording();
+  }, [stopRecording, stopTranscription, timer]);
+
+  const handleGenerateInsight = useCallback(async () => {
+    if (!savedAudioUri) return;
+    setIsGenerating(true);
+    try {
+      await sheetRef.current?.dismiss();
+      await processAudioFile(savedAudioUri);
+      router.back();
+    } catch (error) {
+      console.error("Generate insight error:", error);
+      setIsGenerating(false);
+    }
+  }, [savedAudioUri, processAudioFile, router]);
+
+  const handleDismissSheet = useCallback(async () => {
+    await sheetRef.current?.dismiss();
     router.back();
-  }, [stopRecording, stopTranscription, router]);
+  }, [router]);
 
   // Countdown on mount, then start recording
   useEffect(() => {
@@ -120,6 +165,13 @@ export default function Recording() {
     }
   }, [countdown, beginRecording]);
 
+  // Capture timer for 60s auto-stop
+  useEffect(() => {
+    if (timer >= 60 && recording) {
+      setRecordedDuration(timer);
+    }
+  }, [timer, recording]);
+
   // Clean up recording and transcription when navigating away from this screen
   const discardRecordingRef = useRef(discardRecording);
   discardRecordingRef.current = discardRecording;
@@ -136,6 +188,7 @@ export default function Recording() {
   );
 
   const isCountingDown = countdown !== null;
+  const formattedDuration = formatTime(recordedDuration);
 
   return (
     <ScreenLayout edges={["top", "left", "right", "bottom"]}>
@@ -155,7 +208,7 @@ export default function Recording() {
               />
             </View>
           </View>
-          <View className="min-h-80 bg-gray-200 rounded-lg relative">
+          <View className="min-h-80 bg-gray-100 rounded-lg relative">
             {!isCountingDown && recording && (
               <View
                 className={cn(
@@ -243,6 +296,108 @@ export default function Recording() {
           </View>
         )}
       </ScrollView>
+
+      {/* Generate Insight Card Bottom Sheet */}
+      <TrueSheet
+        ref={sheetRef}
+        name="generate-insight-sheet"
+        detents={["auto"]}
+        cornerRadius={24}
+        accessible
+        accessibilityLabel="Generate Insight Card"
+        accessibilityHint="Swipe down to dismiss"
+        onDidDismiss={() => {
+          if (!isGenerating) {
+            router.back();
+          }
+        }}
+        header={() => (
+          <View className="flex-row justify-end px-4 pt-3 pb-1">
+            <Pressable
+              onPress={handleDismissSheet}
+              className="size-9 rounded-full bg-slate-300 items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              hitSlop={8}
+            >
+              <X size={18} color="#fff" />
+            </Pressable>
+          </View>
+        )}
+      >
+        <View className="px-5 pb-8">
+          {/* Sheet Title */}
+          <Text
+            className="text-xl font-bold text-foreground mb-5"
+            style={{ fontFamily: "Urbanist_700Bold" }}
+            accessibilityRole="header"
+          >
+            Generate Insight Card
+          </Text>
+
+          {/* Recording Info */}
+          <View className="flex-row items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 mb-5">
+            <View className="size-10 rounded-full bg-primary/15 items-center justify-center">
+              <Mic size={20} color="#3bcaca" />
+            </View>
+            <View>
+              <Text
+                className="text-foreground text-base font-semibold"
+                style={{ fontFamily: "Urbanist_600SemiBold" }}
+              >
+                {recordedDate}
+              </Text>
+              <Text
+                className="text-muted-foreground text-sm"
+                style={{ fontFamily: "Urbanist_400Regular" }}
+              >
+                {savedAudioUri
+                  ? (savedAudioUri.split("/").pop()?.slice(0, 13) ?? "")
+                  : ""}
+                {"  |  "}
+                {formattedDuration.slice(3)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Title Input */}
+          <TextInput
+            value={insightTitle}
+            onChangeText={setInsightTitle}
+            placeholder="Enter title name for insight card (Optional)"
+            placeholderTextColor="#9ca3af"
+            className="border border-gray-200 bg-gray-50 rounded-xl px-4 py-3.5 text-base text-foreground mb-3"
+            style={{ fontFamily: "Urbanist_400Regular" }}
+            accessibilityLabel="Insight card title"
+            accessibilityHint="Optional title for the generated insight card"
+          />
+
+          {/* Helper Text */}
+          <Text
+            className="text-muted-foreground text-sm mb-5 leading-5"
+            style={{ fontFamily: "Urbanist_400Regular" }}
+          >
+            You can save this insight card to your preferred title
+          </Text>
+
+          {/* Generate Insight Button */}
+          <Button
+            onPress={handleGenerateInsight}
+            disabled={isGenerating}
+            accessibilityLabel="Generate Insight"
+            accessibilityHint="Uploads the recording and generates an insight card"
+            className="w-full rounded-full h-14 bg-primary active:bg-primary/90"
+          >
+            <Sparkles size={20} color="#fff" />
+            <Text
+              className="text-lg font-semibold ml-1 text-white tracking-wide"
+              style={{ fontFamily: "Urbanist_600SemiBold" }}
+            >
+              {isGenerating ? "Generating..." : "Generate Insight"}
+            </Text>
+          </Button>
+        </View>
+      </TrueSheet>
     </ScreenLayout>
   );
 }

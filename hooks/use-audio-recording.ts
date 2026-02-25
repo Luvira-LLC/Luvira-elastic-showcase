@@ -47,7 +47,7 @@ export const useAudioRecording = ({
       clearInterval(meteringIntervalRef.current);
       meteringIntervalRef.current = null;
     }
-    setLevels([]);
+    // setLevels([]);
   }, []);
 
   const startRecording = useCallback(async (): Promise<void> => {

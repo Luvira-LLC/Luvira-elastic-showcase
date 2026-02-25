@@ -29,7 +29,7 @@ export default function Waveform({ levels }: Props) {
               width={barWidth}
               height={barHeight}
               rx={2}
-              fill="#ccc"
+              fill="#ddd"
             />
           );
         })}
