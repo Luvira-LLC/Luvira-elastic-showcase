@@ -1,13 +1,19 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ChevronLeft, Menu } from "lucide-react-native";
 import React from "react";
 import { Text, useColorScheme, View } from "react-native";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
 
-export default function Header() {
+interface HeaderProps {
+  showBackButton?: boolean;
+}
+
+export default function Header({ showBackButton = false }: HeaderProps) {
   const colorScheme = useColorScheme();
+  const router = useRouter();
 
   return (
     <View className="w-full min-h-12 flex flex-row justify-between items-center px-3 bg-white">
@@ -15,11 +21,12 @@ export default function Header() {
         variant="outline"
         size="icon"
         className="bg-transparent border-0"
-        accessibilityLabel="Open menu"
-        accessibilityHint="Opens the navigation menu"
+        onPress={showBackButton ? () => router.back() : undefined}
+        accessibilityLabel={showBackButton ? "Go back" : "Open menu"}
+        accessibilityHint={showBackButton ? "Returns to the previous screen" : "Opens the navigation menu"}
       >
         <Icon
-          as={Menu}
+          as={showBackButton ? ChevronLeft : Menu}
           size={24}
           className={cn("text-black", {
             "text-white": colorScheme === "dark",

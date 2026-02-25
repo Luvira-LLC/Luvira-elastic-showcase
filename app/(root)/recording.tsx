@@ -121,9 +121,10 @@ export default function Recording() {
     if (!savedAudioUri) return;
     setIsGenerating(true);
     try {
-      await sheetRef.current?.dismiss();
-      await processAudioFile(savedAudioUri);
-      router.back();
+      //   await sheetRef.current?.dismiss();
+      //   await processAudioFile(savedAudioUri);
+      //   router.back();
+      router.navigate("/(root)/generating-insight");
     } catch (error) {
       console.error("Generate insight error:", error);
       setIsGenerating(false);

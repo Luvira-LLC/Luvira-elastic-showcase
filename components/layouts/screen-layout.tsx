@@ -6,13 +6,15 @@ import Header from "./header";
 
 interface ScreenLayoutProps {
   children: ReactNode;
-  showHeader?: boolean; // Option to hide header on specific screens
-  edges?: ("top" | "bottom" | "left" | "right")[]; // Customize which edges to apply safe area
+  showHeader?: boolean;
+  showBackButton?: boolean;
+  edges?: ("top" | "bottom" | "left" | "right")[];
 }
 
 export default function ScreenLayout({
   children,
   showHeader = true,
+  showBackButton = false,
   edges = ["top", "left", "right"],
 }: ScreenLayoutProps) {
   const colorScheme = useColorScheme();
@@ -23,7 +25,7 @@ export default function ScreenLayout({
       })}
       edges={edges}
     >
-      {showHeader && <Header />}
+      {showHeader && <Header showBackButton={showBackButton} />}
       <View className="flex-1 bg-white">{children}</View>
     </SafeAreaView>
   );
