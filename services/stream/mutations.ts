@@ -2,10 +2,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import EventSource from "react-native-sse";
 
-import { captureAudioRecording, connectToStream } from "./api";
+import {
+  captureAudioRecording,
+  connectToStream,
+  retrieveUserPastInsights,
+} from "./api";
 import {
   AudioStreamEventType,
   TCaptureAudioArgs,
+  TInsightArgs,
   TStreamCallbacks,
 } from "./type";
 
@@ -45,6 +50,19 @@ export const useCaptureAudioMutation = (streamCallbacks?: TStreamCallbacks) => {
           onError: streamCallbacks?.onError,
         });
       }
+    },
+  });
+};
+
+export const useRetrieveUserInsights = () => {
+  return useMutation({
+    mutationFn: ({ userId, sessionId, anchorText }: TInsightArgs) =>
+      retrieveUserPastInsights({ anchorText, userId, sessionId }),
+    onError: (error) => {
+      console.error(error);
+    },
+    onSuccess: (data) => {
+      console.log(data);
     },
   });
 };

@@ -37,3 +37,53 @@ export type TStreamCallbacks = {
   }) => void;
   onError?: (error: Event) => void;
 };
+
+export type TUserInsightAnalysis = {
+  ok: boolean;
+  agent_run_id: string;
+  timestamp: string;
+  result: {
+    recall_hits: string[];
+    pattern_analysis: {
+      dominant_theme: string;
+      recurrence_count: number;
+      window_days: number;
+    };
+    decision: "action_created" | "recall_only" | "no_hits";
+    action_plan: {
+      plan_id: string;
+      title: string;
+      recommended_steps: string[];
+      related_theme: string;
+      confidence: number;
+    } | null;
+    explainability: {
+      why: string;
+      policy: {
+        similarity_threshold: number;
+        recurrence_threshold: number;
+        window_days: number;
+      };
+    };
+    impact_report: {} | null;
+  };
+  trace: string[];
+  metrics: {
+    recall_latency_ms: number;
+    analysis_latency_ms: number;
+    write_latency_ms: number;
+    total_time_ms: number;
+    benchmarking: {
+      manual_process_est_seconds: number;
+      agent_process_seconds: number;
+      efficiency_gain_pct: number;
+      human_steps_automated: number;
+    };
+  };
+};
+
+export type TInsightArgs = {
+  userId: string;
+  sessionId: string;
+  anchorText: string;
+};

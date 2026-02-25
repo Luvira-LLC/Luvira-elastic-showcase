@@ -8,7 +8,9 @@ import {
   AudioStreamEventType,
   TAudioCaptureResponse,
   TCaptureAudioArgs,
+  TInsightArgs,
   TStreamCallbacks,
+  TUserInsightAnalysis,
 } from "./type";
 
 const token =
@@ -202,4 +204,18 @@ export const connectToStream = (
   });
 
   return es;
+};
+
+export const retrieveUserPastInsights = async ({
+  userId,
+  sessionId,
+  anchorText,
+}: TInsightArgs) => {
+  const { data } = await axios.post(apiConfig["agent-run"], {
+    user_id: userId,
+    session_id: sessionId,
+    anchor_text: anchorText,
+  });
+
+  return data as TUserInsightAnalysis;
 };
