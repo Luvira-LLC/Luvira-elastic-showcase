@@ -14,17 +14,9 @@ import {
 } from "lucide-react-native";
 import React, { useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Badge } from "./ui/badge";
+import ReferencedMemoryCardItem from "./referenced-memory-card-item";
 
 const TAG_COLORS = ["#e7ffdf", "#fde68a", "#ffe5cb", "#dbeafe", "#ede9fe"];
-
-const formatDate = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
-  return `${day} ${month}, ${year}`;
-};
 
 export function InsightCardDetails() {
   const sheet = useRef<TrueSheet>(null);
@@ -452,7 +444,8 @@ export function InsightCardDetails() {
       <TrueSheet
         ref={sheet}
         name="referenced-memory-sheet"
-        detents={["auto", 0.69, 1]}
+        detents={[0.5, 0.75, 1]}
+        initialDetentAnimated={false}
         cornerRadius={24}
         accessible
         accessibilityLabel="Referenced Memory bottom sheet"
@@ -476,7 +469,10 @@ export function InsightCardDetails() {
         )}
       >
         <ScrollView
-          className="px-5 pb-8"
+          className="px-5"
+          nestedScrollEnabled
+          overScrollMode="never"
+          contentContainerStyle={{ paddingBottom: 200 }}
           accessibilityRole="list"
           accessibilityLabel="Referenced memories list"
         >
@@ -507,82 +503,11 @@ export function InsightCardDetails() {
 
           {/* Dynamic Memory Cards */}
           {hits.map((hit, index) => (
-            <View
+            <ReferencedMemoryCardItem
               key={hit.insight.id}
-              className="rounded-2xl p-5 mb-4"
-              style={{
-                backgroundColor: index === 0 ? "#3bcaca" : "#3b82c8",
-              }}
-              accessible
-              accessibilityRole="summary"
-              accessibilityLabel={`Memory ${index + 1}. ${hit.insight.anchor_text}. Similarity ${hit.similarity_score.toFixed(2)}`}
-            >
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="flex-row items-center gap-2">
-                  <View className="size-8 rounded-full bg-white/20 items-center justify-center">
-                    <Star size={16} color="#fff" fill="#fff" />
-                  </View>
-                  <Text
-                    className="text-base font-semibold"
-                    style={{
-                      fontFamily: "Urbanist_600SemiBold",
-                      color: "#fff",
-                    }}
-                  >
-                    Memory {index + 1}
-                  </Text>
-                </View>
-                <Text
-                  className="text-sm"
-                  style={{
-                    fontFamily: "Urbanist_400Regular",
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                >
-                  {formatDate(hit.insight.timestamp)}
-                </Text>
-              </View>
-
-              <Text
-                className="text-xl font-bold mb-3"
-                style={{ fontFamily: "Urbanist_700Bold", color: "#fff" }}
-              >
-                {hit.insight.anchor_text}
-              </Text>
-
-              {hit.insight.themes_array.length > 0 && (
-                <View className="flex-row flex-wrap gap-2 mb-4">
-                  {hit.insight.themes_array.map((tag, i) => (
-                    <Badge key={tag + i} className="bg-amber-100">
-                      <Text
-                        className="text-amber-900 text-sm tracking-wide"
-                        style={{ fontFamily: "Urbanist_400Regular" }}
-                      >
-                        {tag}
-                      </Text>
-                    </Badge>
-                  ))}
-                </View>
-              )}
-
-              <View className="flex-row items-center justify-between">
-                <Text
-                  className="text-sm"
-                  style={{
-                    fontFamily: "Urbanist_400Regular",
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                >
-                  Similarity
-                </Text>
-                <Text
-                  className="text-base font-bold"
-                  style={{ fontFamily: "Urbanist_700Bold", color: "#fff" }}
-                >
-                  {hit.similarity_score.toFixed(2)}
-                </Text>
-              </View>
-            </View>
+              hit={hit}
+              index={index}
+            />
           ))}
         </ScrollView>
       </TrueSheet>

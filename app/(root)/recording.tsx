@@ -15,7 +15,15 @@ import { useNotificationPermissions } from "@/hooks/use-notification-permission"
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useStreamProcessing } from "@/hooks/use-stream-processing";
 import { cn } from "@/lib/utils";
-import { Mic, Pause, Play, Sparkles, Square, X } from "lucide-react-native";
+import {
+  Ellipsis,
+  Mic,
+  Pause,
+  Play,
+  Sparkles,
+  Square,
+  X,
+} from "lucide-react-native";
 
 const formatTime = (seconds: number): string => {
   const hrs = Math.floor(seconds / 3600);
@@ -254,7 +262,12 @@ export default function Recording() {
                   : "Luvira is listening"}
             </Text>
             {!isCountingDown && !isPaused && (
-              <Text className="font-semibold text-primary text-xl">...</Text>
+              <Icon
+                as={Ellipsis}
+                size={24}
+                className="text-primary animate-pulse"
+              />
+              //   <Text className="font-semibold text-primary text-xl">...</Text>
             )}
           </View>
         </View>
