@@ -2,15 +2,7 @@ import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import ScreenLayout from "@/components/layouts/screen-layout";
 import Waveform from "@/components/recording/waveform";
@@ -23,15 +15,7 @@ import { useNotificationPermissions } from "@/hooks/use-notification-permission"
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useStreamProcessing } from "@/hooks/use-stream-processing";
 import { cn } from "@/lib/utils";
-import {
-  AlertCircle,
-  Mic,
-  Pause,
-  Play,
-  Sparkles,
-  Square,
-  X,
-} from "lucide-react-native";
+import { Mic, Pause, Play, Sparkles, Square, X } from "lucide-react-native";
 
 const formatTime = (seconds: number): string => {
   const hrs = Math.floor(seconds / 3600);
@@ -73,14 +57,7 @@ export default function Recording() {
     setupNotification,
     dismissNotification,
   } = useNotificationPermissions();
-  const {
-    processAudioFile,
-    resetStreamState,
-    streamingPhase,
-    streamingMessage,
-    uploadProgress,
-    errorResponse,
-  } = useStreamProcessing();
+  const { processAudioFile, resetStreamState } = useStreamProcessing();
   const {
     transcript,
     startTranscription,
@@ -120,7 +97,7 @@ export default function Recording() {
 
     const hasNotificationPermission = await requestNotificationPermissions();
     if (!hasNotificationPermission) {
-      console.log("Go ahead and recording withoout notiifcation");
+      console.log("Go ahead and recording without notification");
     }
 
     await startRecording();
@@ -145,8 +122,8 @@ export default function Recording() {
     setIsGenerating(true);
     try {
       await sheetRef.current?.dismiss();
-      await processAudioFile(savedAudioUri);
-      setIsGenerating(false);
+      // Fire-and-forget: start upload + SSE, navigate immediately
+      processAudioFile(savedAudioUri);
       router.replace("/(root)/generating-insight");
     } catch (error) {
       console.error("Generate insight error:", error);
@@ -422,75 +399,6 @@ export default function Recording() {
           </Button>
         </View>
       </TrueSheet>
-
-      {/* SSE Processing State Modal */}
-      <Modal
-        visible={isGenerating}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        accessibilityViewIsModal
-      >
-        <View className="flex-1 bg-black/60 justify-center items-center px-8">
-          <View className="bg-white rounded-2xl px-6 py-8 w-full items-center">
-            {errorResponse ? (
-              <>
-                <View className="size-12 rounded-full bg-red-100 items-center justify-center mb-4">
-                  <AlertCircle size={24} color="#dc2626" />
-                </View>
-                <Text
-                  className="text-lg font-bold text-foreground mb-2 text-center"
-                  style={{ fontFamily: "Urbanist_700Bold" }}
-                >
-                  Something went wrong
-                </Text>
-                <Text
-                  className="text-sm text-muted-foreground text-center mb-5 leading-5"
-                  style={{ fontFamily: "Urbanist_400Regular" }}
-                >
-                  {errorResponse}
-                </Text>
-                <Button
-                  onPress={() => setIsGenerating(false)}
-                  className="w-full rounded-full h-12 bg-primary active:bg-primary/90"
-                  accessibilityLabel="Dismiss error"
-                >
-                  <Text
-                    className="text-base font-semibold text-white"
-                    style={{ fontFamily: "Urbanist_600SemiBold" }}
-                  >
-                    Dismiss
-                  </Text>
-                </Button>
-              </>
-            ) : (
-              <>
-                <ActivityIndicator
-                  size="large"
-                  color="#3bcaca"
-                  className="mb-4"
-                />
-                <Text
-                  className="text-lg font-bold text-foreground mb-1 text-center"
-                  style={{ fontFamily: "Urbanist_700Bold" }}
-                >
-                  {streamingPhase
-                    ? streamingPhase.charAt(0).toUpperCase() +
-                      streamingPhase.slice(1)
-                    : "Uploading"}
-                </Text>
-                <Text
-                  className="text-sm text-muted-foreground text-center"
-                  style={{ fontFamily: "Urbanist_400Regular" }}
-                >
-                  {streamingMessage ||
-                    `Sending audio... ${Math.round(uploadProgress)}%`}
-                </Text>
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
     </ScreenLayout>
   );
 }

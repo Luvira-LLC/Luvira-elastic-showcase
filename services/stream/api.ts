@@ -124,46 +124,60 @@ export const connectToStream = (
     }
   };
 
+  const safeParse = (raw: string | null | undefined, fallback: any = {}) => {
+    try {
+      return JSON.parse(raw ?? JSON.stringify(fallback));
+    } catch (e) {
+      console.error("Failed to parse SSE data:", e);
+      return fallback;
+    }
+  };
+
   es.addEventListener("status", (event) => {
     trackEventId(event);
-    const data = JSON.parse(event.data ?? "{}");
+    const data = safeParse(event.data);
     console.log(data.phase, data.message);
     callbacks.onStatus?.(data);
   });
 
   es.addEventListener("card_header", (event) => {
     trackEventId(event);
-    const data = JSON.parse(event.data ?? "{}");
+    const data = safeParse(event.data);
     console.log(data.title, data.vibe, data.card_type);
     callbacks.onCardHeader?.(data);
   });
 
   es.addEventListener("summary_bullets", (event) => {
     trackEventId(event);
-    const bullets: string[] = JSON.parse(event.data ?? "[]");
+    const bullets: string[] = safeParse(event.data, []);
     console.log(bullets);
     callbacks.onSummaryBullets?.(bullets);
   });
 
   es.addEventListener("recall_anchor", (event) => {
     trackEventId(event);
-    const data = event.data;
-    console.log(data);
+    console.log(event.data);
     callbacks.onRecallAnchor?.(event.data ?? "");
   });
 
   es.addEventListener("action_item", (event) => {
     trackEventId(event);
-    const data = event.data;
-    console.log(data);
+    console.log(event.data);
     callbacks.onActionItem?.(event.data ?? "");
   });
 
   es.addEventListener("final", (event) => {
     trackEventId(event);
-    const data = JSON.parse(event.data ?? "{}");
+    const data = safeParse(event.data);
     console.log("✅ Done:", data.session_id, data.status);
     callbacks.onComplete?.(data);
+  });
+
+  es.addEventListener("recall_results", (event) => {
+    trackEventId(event);
+    const data = safeParse(event.data);
+    console.log("📦 Recall results received:", JSON.stringify(data));
+    callbacks.onRecallResults?.(data);
     es.close();
   });
 

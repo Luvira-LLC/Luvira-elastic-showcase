@@ -1,53 +1,60 @@
 import { Text } from "@/components/ui/text";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { cn } from "@/lib/utils";
+import { useStreamStore } from "@/store/stream-store";
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
+import { useRouter } from "expo-router";
 import {
   ChevronLeft,
   ChevronRight,
   Ellipsis,
-  FilePlusCorner,
+  Mic,
   Star,
   X,
 } from "lucide-react-native";
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Badge } from "./ui/badge";
 
+const TAG_COLORS = ["#e7ffdf", "#fde68a", "#ffe5cb", "#dbeafe", "#ede9fe"];
+
+const formatDate = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const day = date.getDate();
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getFullYear();
+  return `${day} ${month}, ${year}`;
+};
+
 export function InsightCardDetails() {
-  const [inputText, setInputText] = useState("");
   const sheet = useRef<TrueSheet>(null);
   const colorScheme = useColorScheme();
-  const hasText = inputText.trim().length > 0;
+  const router = useRouter();
 
-  // Present the sheet at the half-expanded detent (index 1 = 0.69)
+  const cardData = useStreamStore((s) => s.cardData);
+  const recallResultData = useStreamStore((s) => s.recallResultData);
+
+  const hits = recallResultData?.hits ?? [];
+  const decision = recallResultData?.decision;
+  const actionPlan = recallResultData?.action_plan;
+
   const present = async () => {
     await sheet.current?.present(1);
   };
 
-  // Dismiss the sheet ✅
   const dismiss = async () => {
     await sheet.current?.dismiss();
-    console.log("Bye bye 👋");
-  };
-
-  const handleGenerate = () => {
-    if (!hasText) return;
-    console.log("Generate insight:", inputText);
   };
 
   return (
     <View className="flex-1 bg-background">
-      {/* <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
-      > */}
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 py-3">
         <Pressable
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Go back"
+          onPress={() => router.back()}
         >
           <ChevronLeft
             size={24}
@@ -58,7 +65,7 @@ export function InsightCardDetails() {
           className="text-lg font-bold text-foreground"
           style={{ fontFamily: "Urbanist_700Bold" }}
         >
-          Insight Card
+          Generated Insight
         </Text>
         <Pressable
           hitSlop={8}
@@ -78,21 +85,26 @@ export function InsightCardDetails() {
         contentContainerClassName="px-5 pb-6"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Prompt Pill */}
-        <View
-          className={cn(
-            "self-start rounded-full border px-5 py-3 mt-4 mb-6",
-            colorScheme === "dark"
-              ? "border-zinc-700 bg-zinc-800/50"
-              : "border-gray-200 bg-gray-50",
-          )}
-        >
-          <Text
-            className="text-foreground text-sm"
-            style={{ fontFamily: "Urbanist_400Regular" }}
-          >
-            I{"'"}m stuck planning Q1 priorities
-          </Text>
+        {/* Recording Info Row */}
+        <View className="flex-row items-center gap-3 mt-4 mb-6">
+          <View className="size-10 rounded-full bg-primary/15 items-center justify-center">
+            <Mic size={20} color="#3bcaca" />
+          </View>
+          <View>
+            <Text
+              className="text-foreground text-base font-semibold"
+              style={{ fontFamily: "Urbanist_600SemiBold" }}
+            >
+              {cardData.title || "Insight Card"}
+            </Text>
+            <Text
+              className="text-muted-foreground text-sm"
+              style={{ fontFamily: "Urbanist_400Regular" }}
+            >
+              {cardData.vibe || ""}{" "}
+              {cardData.card_type ? `| ${cardData.card_type}` : ""}
+            </Text>
+          </View>
         </View>
 
         {/* Memory Card */}
@@ -114,7 +126,11 @@ export function InsightCardDetails() {
               className="text-primary-foreground/80 text-sm"
               style={{ fontFamily: "Urbanist_400Regular" }}
             >
-              20th Mar, 2026
+              {new Date().toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
             </Text>
           </View>
 
@@ -123,47 +139,48 @@ export function InsightCardDetails() {
             className="text-primary-foreground text-xl font-bold mb-3"
             style={{ fontFamily: "Urbanist_700Bold" }}
           >
-            I{"'"}m stuck planning Q1 priorities
+            {cardData.recall_anchor || cardData.title || "Processing..."}
           </Text>
 
-          {/* Card Body */}
-          <Text
-            className="text-primary-foreground/90 text-base leading-6 mb-4"
-            style={{ fontFamily: "Urbanist_400Regular" }}
-          >
-            You may be experiencing planning overload. Consider narrowing to 3
-            priority outcomes. Working long hours in physically demanding
-            environments can take a toll on your mental health. Here are 5
-            simple yet effective.
-          </Text>
+          {/* Card Body - Bullets */}
+          {cardData.bullets && cardData.bullets.length > 0 ? (
+            <Text
+              className="text-primary-foreground/90 text-lg leading-6 mb-4 tracking-wide"
+              style={{ fontFamily: "Urbanist_500Medium" }}
+            >
+              {cardData.bullets.join(". ")}
+            </Text>
+          ) : (
+            <Text
+              className="text-primary-foreground/90 text-base leading-6 mb-4"
+              style={{ fontFamily: "Urbanist_400Regular" }}
+            >
+              Generating summary...
+            </Text>
+          )}
 
-          {/* Tags */}
-          <View className="flex-row flex-wrap gap-2">
-            <View className="rounded-full bg-[#e7ffdf] px-4 py-1.5">
-              <Text
-                className="text-amber-900 text-sm font-medium"
-                style={{ fontFamily: "Urbanist_500Medium" }}
-              >
-                Planning
-              </Text>
-            </View>
-            <View className="rounded-full bg-amber-100 px-4 py-1.5">
-              <Text
-                className="text-amber-900 text-sm font-medium"
-                style={{ fontFamily: "Urbanist_500Medium" }}
-              >
-                Overwhelm
-              </Text>
-            </View>
-            <View className="rounded-full bg-amber-100 px-4 py-1.5">
-              <Text
-                className="text-amber-900 text-sm font-medium"
-                style={{ fontFamily: "Urbanist_500Medium" }}
-              >
-                Prioritization
-              </Text>
-            </View>
-          </View>
+          {/* Tags from first recall hit themes */}
+          {hits.length > 0 &&
+            (hits[0]?.insight.themes_array.length ?? 0) > 0 && (
+              <View className="flex-row flex-wrap gap-2">
+                {hits[0]?.insight.themes_array.map((tag, i) => (
+                  <View
+                    key={tag + i}
+                    className="rounded-full px-4 py-1.5"
+                    style={{
+                      backgroundColor: TAG_COLORS[i % TAG_COLORS.length],
+                    }}
+                  >
+                    <Text
+                      className="text-amber-900 text-sm font-medium"
+                      style={{ fontFamily: "Urbanist_500Medium" }}
+                    >
+                      {tag}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
         </View>
 
         {/* Privacy Notice */}
@@ -176,35 +193,243 @@ export function InsightCardDetails() {
         </Text>
 
         {/* Referenced Memory Row */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Referenced Memory, 2 items"
-          className={cn(
-            "flex-row items-center justify-between rounded-2xl border px-5 py-4 mb-6",
-            colorScheme === "dark"
-              ? "border-zinc-700 bg-zinc-800/50 active:bg-zinc-700"
-              : "border-gray-200 bg-slate-100 active:bg-gray-50",
-          )}
-          onPress={present}
-        >
-          <View className="flex-row items-center gap-3">
-            <Text
-              className="text-foreground text-base font-semibold"
-              style={{ fontFamily: "Urbanist_600SemiBold" }}
-            >
-              Referenced Memory
-            </Text>
-            <View className="size-7 rounded-full bg-primary items-center justify-center">
-              <Text className="text-primary-foreground text-xs font-bold">
-                2
+        {hits.length > 0 && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Referenced Memory, ${hits.length} items`}
+            className={cn(
+              "flex-row items-center justify-between rounded-2xl border px-5 py-4 mb-6",
+              colorScheme === "dark"
+                ? "border-zinc-700 bg-zinc-800/50 active:bg-zinc-700"
+                : "border-gray-200 bg-slate-100 active:bg-gray-50",
+            )}
+            onPress={present}
+          >
+            <View className="flex-row items-center gap-3">
+              <Text
+                className="text-foreground text-base font-semibold"
+                style={{ fontFamily: "Urbanist_600SemiBold" }}
+              >
+                Referenced Memory
               </Text>
+              <View className="size-7 rounded-full bg-primary items-center justify-center">
+                <Text className="text-primary-foreground text-xs font-bold">
+                  {hits.length}
+                </Text>
+              </View>
             </View>
+            <ChevronRight
+              size={20}
+              color={colorScheme === "dark" ? "#a1a1a1" : "#6b7280"}
+            />
+          </Pressable>
+        )}
+
+        {/* Action Plan / Recall Section */}
+        {decision && (
+          <View
+            className={cn(
+              "rounded-2xl border p-5 mb-6",
+              colorScheme === "dark"
+                ? "border-zinc-700 bg-zinc-800/50"
+                : "border-gray-200 bg-white",
+            )}
+          >
+            {/* Title & Subtitle */}
+            {actionPlan ? (
+              <>
+                <Text
+                  className="text-foreground text-xl font-bold mb-1"
+                  style={{ fontFamily: "Urbanist_700Bold" }}
+                >
+                  {actionPlan.title}
+                </Text>
+                <Text
+                  className="text-muted-foreground text-sm mb-5 leading-5"
+                  style={{ fontFamily: "Urbanist_400Regular" }}
+                >
+                  Generated based on recurring {actionPlan.related_theme}{" "}
+                  friction in the last{" "}
+                  {recallResultData?.pattern_analysis?.window_days ?? 30} days.
+                </Text>
+              </>
+            ) : (
+              <Text
+                className="text-foreground text-xl font-bold mb-5"
+                style={{ fontFamily: "Urbanist_700Bold" }}
+              >
+                Recall Summary
+              </Text>
+            )}
+
+            {/* Divider */}
+            <View
+              className={cn(
+                "mb-5",
+                colorScheme === "dark"
+                  ? "border-zinc-700"
+                  : "border-dashed border-gray-200",
+              )}
+            />
+
+            {/* Status */}
+            <View
+              className={cn(
+                "rounded-xl px-5 py-4 mb-5",
+                colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
+              )}
+            >
+              <Text
+                className="text-foreground text-base font-semibold mb-2"
+                style={{ fontFamily: "Urbanist_600SemiBold" }}
+              >
+                Status
+              </Text>
+              <View
+                className="self-start rounded-full px-4 py-1.5"
+                style={{
+                  backgroundColor: actionPlan ? "#dcfce7" : "#dbeafe",
+                }}
+              >
+                <Text
+                  className="text-sm font-medium"
+                  style={{
+                    fontFamily: "Urbanist_500Medium",
+                    color: actionPlan ? "#16a34a" : "#2563eb",
+                  }}
+                >
+                  {actionPlan ? "Action Created" : "Recall Only"}
+                </Text>
+              </View>
+            </View>
+
+            {/* Recommended Steps — only when action_plan exists */}
+            {actionPlan && actionPlan.recommended_steps.length > 0 && (
+              <>
+                {/* Divider */}
+                <View
+                  className={cn(
+                    "border-b mb-5",
+                    colorScheme === "dark"
+                      ? "border-zinc-700"
+                      : "border-dashed border-gray-200",
+                  )}
+                />
+
+                <View
+                  className={cn(
+                    "rounded-xl px-5 py-4 mb-5",
+                    colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
+                  )}
+                >
+                  <Text
+                    className="text-foreground text-base font-semibold mb-4"
+                    style={{ fontFamily: "Urbanist_600SemiBold" }}
+                  >
+                    Recommended Steps
+                  </Text>
+                  {actionPlan.recommended_steps.map((step, index) => (
+                    <View
+                      key={step}
+                      className="flex-row items-center gap-3 mb-3"
+                    >
+                      <View className="size-8 rounded-full border border-primary/30 items-center justify-center">
+                        <Text
+                          className="text-primary text-sm font-semibold"
+                          style={{ fontFamily: "Urbanist_600SemiBold" }}
+                        >
+                          {index + 1}
+                        </Text>
+                      </View>
+                      <Text
+                        className="text-foreground text-sm flex-1 leading-5"
+                        style={{ fontFamily: "Urbanist_400Regular" }}
+                      >
+                        {step}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* Theme */}
+            {actionPlan?.related_theme && (
+              <>
+                <View
+                  className={cn(
+                    "border-b mb-5",
+                    colorScheme === "dark"
+                      ? "border-zinc-700"
+                      : "border-dashed border-gray-200",
+                  )}
+                />
+
+                <View
+                  className={cn(
+                    "rounded-xl px-5 py-4 mb-5",
+                    colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
+                  )}
+                >
+                  <Text
+                    className="text-foreground text-base font-semibold mb-2"
+                    style={{ fontFamily: "Urbanist_600SemiBold" }}
+                  >
+                    Theme
+                  </Text>
+                  <View
+                    className="self-start rounded-full px-4 py-1.5"
+                    style={{ backgroundColor: "#f1f5f9" }}
+                  >
+                    <Text
+                      className="text-foreground text-sm font-medium"
+                      style={{ fontFamily: "Urbanist_500Medium" }}
+                    >
+                      {actionPlan.related_theme}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+
+            {/* Confidence Score */}
+            {actionPlan && actionPlan.confidence != null && (
+              <>
+                <View
+                  className={cn(
+                    "border-b mb-5",
+                    colorScheme === "dark"
+                      ? "border-zinc-700"
+                      : "border-dashed border-gray-200",
+                  )}
+                />
+
+                <View
+                  className={cn(
+                    "rounded-xl px-5 py-4",
+                    colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
+                  )}
+                >
+                  <Text
+                    className="text-foreground text-base font-semibold mb-2"
+                    style={{ fontFamily: "Urbanist_600SemiBold" }}
+                  >
+                    Confidence Score
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{
+                      fontFamily: "Urbanist_600SemiBold",
+                      color: "#16a34a",
+                    }}
+                  >
+                    {actionPlan.confidence.toFixed(2)}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
-          <ChevronRight
-            size={20}
-            color={colorScheme === "dark" ? "#a1a1a1" : "#6b7280"}
-          />
-        </Pressable>
+        )}
 
         {/* FAB spacer */}
         <View className="h-16" />
@@ -217,10 +442,13 @@ export function InsightCardDetails() {
           accessibilityLabel="New insight"
           className="size-14 rounded-full bg-primary items-center justify-center active:bg-primary/90"
           style={styles.fab}
+          onPress={() => router.replace("/(root)/recording")}
         >
-          <FilePlusCorner size={22} color="#fff" />
+          <Mic size={22} color="#fff" />
         </Pressable>
       </View>
+
+      {/* Referenced Memory Bottom Sheet */}
       <TrueSheet
         ref={sheet}
         name="referenced-memory-sheet"
@@ -264,9 +492,9 @@ export function InsightCardDetails() {
             <View className="size-7 rounded-full bg-primary items-center justify-center">
               <Text
                 className="text-primary-foreground text-xs font-bold"
-                accessibilityLabel="2 memories"
+                accessibilityLabel={`${hits.length} memories`}
               >
-                2
+                {hits.length}
               </Text>
             </View>
           </View>
@@ -277,169 +505,85 @@ export function InsightCardDetails() {
             See similar memories and generated insights
           </Text>
 
-          {/* Memory Card 1 */}
-          <View
-            className="rounded-2xl bg-primary p-5 mb-4"
-            accessible
-            accessibilityRole="summary"
-            accessibilityLabel="Memory 1, 20th January 2026. I'm stuck planning Q1 priorities. Tags: Planning, Overwhelm, Prioritization. Similarity 0.87"
-          >
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="flex-row items-center gap-2">
-                <View className="size-8 rounded-full bg-white/20 items-center justify-center">
-                  <Star size={16} color="#fff" fill="#fff" />
-                </View>
-                <Text
-                  className="text-primary-foreground text-base font-semibold"
-                  style={{ fontFamily: "Urbanist_600SemiBold" }}
-                >
-                  Memory 1
-                </Text>
-              </View>
-              <Text
-                className="text-primary-foreground/80 text-sm"
-                style={{ fontFamily: "Urbanist_400Regular" }}
-              >
-                20th Jan, 2026
-              </Text>
-            </View>
-
-            <Text
-              className="text-primary-foreground text-xl font-bold mb-3"
-              style={{ fontFamily: "Urbanist_700Bold" }}
+          {/* Dynamic Memory Cards */}
+          {hits.map((hit, index) => (
+            <View
+              key={hit.insight.id}
+              className="rounded-2xl p-5 mb-4"
+              style={{
+                backgroundColor: index === 0 ? "#3bcaca" : "#3b82c8",
+              }}
+              accessible
+              accessibilityRole="summary"
+              accessibilityLabel={`Memory ${index + 1}. ${hit.insight.anchor_text}. Similarity ${hit.similarity_score.toFixed(2)}`}
             >
-              I{"'"}m stuck planning Q1 priorities
-            </Text>
-
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              <Badge className="bg-[#e7ffdf]">
-                <Text
-                  className="text-green-900 text-sm tracking-wide"
-                  style={{ fontFamily: "Urbanist_400Regular" }}
-                >
-                  Planning
-                </Text>
-              </Badge>
-              <Badge className="bg-amber-100">
-                <Text
-                  className="text-amber-900  text-sm tracking-wide"
-                  style={{ fontFamily: "Urbanist_400Regular" }}
-                >
-                  Overwhelm
-                </Text>
-              </Badge>
-              <Badge className="bg-[#ffe5cb]">
-                <Text
-                  className="text-amber-900 text-sm tracking-wide"
-                  style={{ fontFamily: "Urbanist_400Regular" }}
-                >
-                  Prioritization
-                </Text>
-              </Badge>
-            </View>
-
-            <View className="flex-row items-center justify-between">
-              <Text
-                className="text-primary-foreground/80 text-sm"
-                style={{ fontFamily: "Urbanist_400Regular" }}
-              >
-                Similarity
-              </Text>
-              <Text
-                className="text-primary-foreground text-base font-bold"
-                style={{ fontFamily: "Urbanist_700Bold" }}
-              >
-                0.87
-              </Text>
-            </View>
-          </View>
-
-          {/* Memory Card 2 */}
-          <View
-            className="rounded-2xl p-5 mb-4"
-            style={{ backgroundColor: "#3b82c8" }}
-            accessible
-            accessibilityRole="summary"
-            accessibilityLabel="Memory 2, 10th December 2025. Struggling to narrow product roadmap goals. Tags: Roadmap, Focus, Focus. Similarity 0.87"
-          >
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="flex-row items-center gap-2">
-                <View className="size-8 rounded-full bg-white/20 items-center justify-center">
-                  <Star size={16} color="#fff" fill="#fff" />
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center gap-2">
+                  <View className="size-8 rounded-full bg-white/20 items-center justify-center">
+                    <Star size={16} color="#fff" fill="#fff" />
+                  </View>
+                  <Text
+                    className="text-base font-semibold"
+                    style={{
+                      fontFamily: "Urbanist_600SemiBold",
+                      color: "#fff",
+                    }}
+                  >
+                    Memory {index + 1}
+                  </Text>
                 </View>
                 <Text
-                  className="text-base font-semibold"
+                  className="text-sm"
                   style={{
-                    fontFamily: "Urbanist_600SemiBold",
-                    color: "#fff",
+                    fontFamily: "Urbanist_400Regular",
+                    color: "rgba(255,255,255,0.8)",
                   }}
                 >
-                  Memory 2
+                  {formatDate(hit.insight.timestamp)}
                 </Text>
               </View>
-              <Text
-                className="text-sm"
-                style={{
-                  fontFamily: "Urbanist_400Regular",
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              >
-                10th Dec, 2025
-              </Text>
-            </View>
 
-            <Text
-              className="text-xl font-bold mb-3"
-              style={{ fontFamily: "Urbanist_700Bold", color: "#fff" }}
-            >
-              Struggling to narrow product roadmap goals.
-            </Text>
-
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              <View className="rounded-full bg-amber-100 px-4 py-1.5">
-                <Text
-                  className="text-amber-900 text-sm font-medium"
-                  style={{ fontFamily: "Urbanist_500Medium" }}
-                >
-                  Roadmap
-                </Text>
-              </View>
-              <View className="rounded-full bg-amber-100 px-4 py-1.5">
-                <Text
-                  className="text-amber-900 text-sm font-medium"
-                  style={{ fontFamily: "Urbanist_500Medium" }}
-                >
-                  Focus
-                </Text>
-              </View>
-              <View className="rounded-full bg-amber-100 px-4 py-1.5">
-                <Text
-                  className="text-amber-900 text-sm font-medium"
-                  style={{ fontFamily: "Urbanist_500Medium" }}
-                >
-                  Focus
-                </Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-center justify-between">
               <Text
-                className="text-sm"
-                style={{
-                  fontFamily: "Urbanist_400Regular",
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              >
-                Similarity
-              </Text>
-              <Text
-                className="text-base font-bold"
+                className="text-xl font-bold mb-3"
                 style={{ fontFamily: "Urbanist_700Bold", color: "#fff" }}
               >
-                0.87
+                {hit.insight.anchor_text}
               </Text>
+
+              {hit.insight.themes_array.length > 0 && (
+                <View className="flex-row flex-wrap gap-2 mb-4">
+                  {hit.insight.themes_array.map((tag, i) => (
+                    <Badge key={tag + i} className="bg-amber-100">
+                      <Text
+                        className="text-amber-900 text-sm tracking-wide"
+                        style={{ fontFamily: "Urbanist_400Regular" }}
+                      >
+                        {tag}
+                      </Text>
+                    </Badge>
+                  ))}
+                </View>
+              )}
+
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="text-sm"
+                  style={{
+                    fontFamily: "Urbanist_400Regular",
+                    color: "rgba(255,255,255,0.8)",
+                  }}
+                >
+                  Similarity
+                </Text>
+                <Text
+                  className="text-base font-bold"
+                  style={{ fontFamily: "Urbanist_700Bold", color: "#fff" }}
+                >
+                  {hit.similarity_score.toFixed(2)}
+                </Text>
+              </View>
             </View>
-          </View>
+          ))}
         </ScrollView>
       </TrueSheet>
     </View>
@@ -447,13 +591,6 @@ export function InsightCardDetails() {
 }
 
 const styles = StyleSheet.create({
-  shadow: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
   fab: {
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

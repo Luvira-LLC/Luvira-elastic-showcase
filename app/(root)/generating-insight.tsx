@@ -1,9 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, View } from "react-native";
+import { Animated, Easing, Pressable, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
 import ScreenLayout from "@/components/layouts/screen-layout";
 import { Text } from "@/components/ui/text";
+import { useStreamStore } from "@/store/stream-store";
+import { useRouter } from "expo-router";
+import { AlertCircle } from "lucide-react-native";
 
 const CIRCLE_SIZE = 200;
 const STROKE_WIDTH = 4;
@@ -16,6 +19,16 @@ const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 
 export default function GeneratingInsight() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
+  const streamingMessage = useStreamStore((s) => s.streamingMessage);
+  const uploadProgress = useStreamStore((s) => s.uploadProgress);
+  const errorResponse = useStreamStore((s) => s.errorResponse);
+  const resetStreamState = useStreamStore((s) => s.resetStreamState);
+
+  const subtitle = streamingMessage
+    || (uploadProgress > 0 && uploadProgress < 100
+      ? `Sending audio... ${Math.round(uploadProgress)}%`
+      : "Preparing...");
 
   useEffect(() => {
     Animated.loop(
@@ -32,6 +45,51 @@ export default function GeneratingInsight() {
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
+
+  const handleRetry = () => {
+    resetStreamState();
+    router.replace("/(root)/recording");
+  };
+
+  if (errorResponse) {
+    return (
+      <ScreenLayout edges={["top", "left", "right", "bottom"]} showBackButton>
+        <View className="flex-1 justify-center items-center px-6">
+          <View className="size-20 rounded-full bg-destructive/15 items-center justify-center mb-6">
+            <AlertCircle size={40} color="#ef4444" />
+          </View>
+
+          <Text
+            className="text-xl font-bold text-foreground mb-2 text-center"
+            style={{ fontFamily: "Urbanist_700Bold" }}
+          >
+            Something went wrong
+          </Text>
+
+          <Text
+            className="text-sm text-muted-foreground text-center leading-5 mb-8 px-4"
+            style={{ fontFamily: "Urbanist_400Regular" }}
+          >
+            {errorResponse}
+          </Text>
+
+          <Pressable
+            onPress={handleRetry}
+            className="rounded-full bg-primary px-8 py-3 active:bg-primary/90"
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+          >
+            <Text
+              className="text-primary-foreground text-base font-semibold"
+              style={{ fontFamily: "Urbanist_600SemiBold" }}
+            >
+              Try Again
+            </Text>
+          </Pressable>
+        </View>
+      </ScreenLayout>
+    );
+  }
 
   return (
     <ScreenLayout edges={["top", "left", "right", "bottom"]} showBackButton>
@@ -164,7 +222,7 @@ export default function GeneratingInsight() {
           className="text-base text-muted-foreground text-center"
           style={{ fontFamily: "Urbanist_400Regular" }}
         >
-          Consulting past sessions...
+          {subtitle}
         </Text>
       </View>
     </ScreenLayout>

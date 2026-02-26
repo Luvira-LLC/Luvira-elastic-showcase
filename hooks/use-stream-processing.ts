@@ -1,23 +1,22 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useCallback, useMemo, useRef } from "react";
 
 import { useCaptureAudioMutation } from "@/services/stream/mutations";
-
-export interface CardData {
-  title?: string;
-  vibe?: string;
-  card_type?: string;
-  bullets?: string[];
-  recall_anchor?: string;
-  action_item?: string;
-}
+import { useStreamStore } from "@/store/stream-store";
 
 export const useStreamProcessing = () => {
-  const [streamingPhase, setStreamingPhase] = useState<string>("");
-  const [streamingMessage, setStreamingMessage] = useState<string>("");
-  const [cardData, setCardData] = useState<CardData>({});
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [errorResponse, setErrorResponse] = useState("");
+  const router = useRouter();
+
+  const {
+    setStreamingPhase,
+    setStreamingMessage,
+    setCardData,
+    setRecallResultData,
+    setIsProcessing,
+    setUploadProgress,
+    setErrorResponse,
+    resetStreamState,
+  } = useStreamStore();
 
   const updateCounterRef = useRef(0);
 
@@ -77,6 +76,15 @@ export const useStreamProcessing = () => {
           }));
         }, delay);
       },
+      onRecallResults: (data: any) => {
+        console.log("Recall result: ", data);
+        const delay = updateCounterRef.current * 100;
+        updateCounterRef.current++;
+        setTimeout(() => {
+          setRecallResultData(data);
+          router.replace("/(root)/insight-card-details");
+        }, delay);
+      },
       onComplete: (finalData: {
         session_id: string;
         status: string;
@@ -115,7 +123,15 @@ export const useStreamProcessing = () => {
         setErrorResponse(errorMessage);
       },
     }),
-    [],
+    [
+      setStreamingPhase,
+      setStreamingMessage,
+      setCardData,
+      setRecallResultData,
+      setIsProcessing,
+      setErrorResponse,
+      router,
+    ],
   );
 
   const { mutateAsync } = useCaptureAudioMutation(streamCallbacks);
@@ -125,26 +141,10 @@ export const useStreamProcessing = () => {
       setIsProcessing(true);
       await mutateAsync({ audioUri, setUploadProgress });
     },
-    [mutateAsync],
+    [mutateAsync, setIsProcessing, setUploadProgress],
   );
 
-  const resetStreamState = useCallback(() => {
-    setErrorResponse("");
-    setUploadProgress(0);
-    setStreamingPhase("");
-    setStreamingMessage("");
-    setCardData({});
-    setIsProcessing(false);
-    updateCounterRef.current = 0;
-  }, []);
-
   return {
-    streamingPhase,
-    streamingMessage,
-    cardData,
-    isProcessing,
-    uploadProgress,
-    errorResponse,
     processAudioFile,
     resetStreamState,
   };

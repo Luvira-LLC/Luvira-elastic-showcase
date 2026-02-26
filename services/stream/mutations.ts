@@ -34,7 +34,6 @@ export const useCaptureAudioMutation = (streamCallbacks?: TStreamCallbacks) => {
       }
 
       if (data?.session_id) {
-        // Close any existing connection first
         esRef.current?.close();
 
         esRef.current = connectToStream(data.session_id, {
@@ -43,6 +42,7 @@ export const useCaptureAudioMutation = (streamCallbacks?: TStreamCallbacks) => {
           onSummaryBullets: streamCallbacks?.onSummaryBullets,
           onRecallAnchor: streamCallbacks?.onRecallAnchor,
           onActionItem: streamCallbacks?.onActionItem,
+          onRecallResults: streamCallbacks?.onRecallResults,
           onComplete: (finalData) => {
             streamCallbacks?.onComplete?.(finalData);
             queryClient.invalidateQueries({ queryKey: ["capture"] });

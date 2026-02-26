@@ -11,6 +11,7 @@ export default function RootLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="recording" />
       <Stack.Screen name="generating-insight" />
+      <Stack.Screen name="insight-card-details" />
     </Stack>
   );
 }
