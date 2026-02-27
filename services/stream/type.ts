@@ -31,7 +31,7 @@ export type TStreamCallbacks = {
   onSummaryBullets?: (bullets: string[]) => void;
   onRecallAnchor?: (anchor: string) => void;
   onActionItem?: (item: string) => void;
-  onRecallResults?: (data: TRecallResultData) => void;
+  onRecallResults?: (data: TStreamRecallResults) => void;
   onComplete?: (data: {
     session_id: string;
     status: string;
@@ -104,6 +104,34 @@ export type TInsight = {
   source_session_hash: string;
 };
 
+export type TPatternAnalysis = {
+  dominant_theme: string;
+  recurrence_count: number;
+  window_days: number;
+};
+
+export type TDecisions = "action_created" | "recall_only" | "no_hits";
+
+export type TActionPlan = {
+  plan_id: string;
+  title: string;
+  recommended_steps: string[];
+  related_theme: string;
+  confidence: number;
+};
+
+export type TStreamRecallResults = {
+  hits_count: number;
+  pattern_analysis: TPatternAnalysis;
+  decision: TDecisions;
+  action_plan: TActionPlan | null;
+};
+
+// export type THitResultPayload = {
+//   hits: { insight: TInsight; similarity_score: number }[];
+//   latency_ms: number;
+// };
+
 export type TRecallResultData = {
   hits: [
     {
@@ -111,19 +139,9 @@ export type TRecallResultData = {
       similarity_score: number;
     },
   ];
-  pattern_analysis: {
-    dominant_theme: string;
-    recurrence_count: number;
-    window_days: number;
-  };
-  decision: "action_created" | "recall_only" | "no_hits";
-  action_plan: {
-    plan_id: string;
-    title: string;
-    recommended_steps: string[];
-    related_theme: string;
-    confidence: number;
-  } | null;
+  pattern_analysis: TPatternAnalysis;
+  decision: TDecisions;
+  action_plan: TActionPlan | null;
   explainability: {
     why: string;
     policy: {
@@ -153,4 +171,9 @@ export type TRecallResultData = {
   };
   run_id: string;
   timestamp: string;
+};
+
+export type TRecallRequestParams = {
+  recallAnchor: string;
+  sessionId: string;
 };

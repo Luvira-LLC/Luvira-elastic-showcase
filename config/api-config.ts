@@ -3,5 +3,5 @@ export const apiConfig = {
     "audio-capture": "/api/v1/capture",
     "insight-card": (sessionId: string) => `/api/v1/stream/${sessionId}`,
   },
-  "agent-run": "/api/v1/agent/run",
+  recall: "/api/v1/recall",
 };

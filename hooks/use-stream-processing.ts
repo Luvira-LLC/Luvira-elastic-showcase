@@ -16,6 +16,7 @@ export const useStreamProcessing = () => {
     setUploadProgress,
     setErrorResponse,
     resetStreamState,
+    setSessionId,
   } = useStreamStore();
 
   const updateCounterRef = useRef(0);
@@ -91,6 +92,7 @@ export const useStreamProcessing = () => {
         processing_time_ms: number;
       }) => {
         const delay = updateCounterRef.current * 100;
+        setSessionId(finalData.session_id);
         updateCounterRef.current++;
         setTimeout(() => {
           setStreamingPhase("complete");

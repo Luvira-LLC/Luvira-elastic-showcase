@@ -8,9 +8,9 @@ import {
   AudioStreamEventType,
   TAudioCaptureResponse,
   TCaptureAudioArgs,
-  TInsightArgs,
+  TRecallRequestParams,
+  TRecallResultData,
   TStreamCallbacks,
-  TUserInsightAnalysis,
 } from "./type";
 
 const token =
@@ -116,7 +116,6 @@ export const connectToStream = (
     console.log("✅ SSE connection opened successfully");
   });
 
-  // Helper to track event ID from each event
   const trackEventId = (event: any) => {
     if (event.id) {
       currentLastEventId = event.id;
@@ -190,7 +189,6 @@ export const connectToStream = (
       event.type === "error" && !event.message?.includes("404");
 
     if (shouldRetry && isNetworkError) {
-      // Close current connection
       es.close();
 
       // Calculate exponential backoff delay
@@ -220,16 +218,19 @@ export const connectToStream = (
   return es;
 };
 
-export const retrieveUserPastInsights = async ({
-  userId,
+export const recallInsights = async ({
+  recallAnchor,
   sessionId,
-  anchorText,
-}: TInsightArgs) => {
-  const { data } = await axios.post(apiConfig["agent-run"], {
-    user_id: userId,
-    session_id: sessionId,
-    anchor_text: anchorText,
+}: TRecallRequestParams): Promise<TRecallResultData> => {
+  const { data } = await axios.get(apiConfig.recall, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      q: recallAnchor,
+      session_id: sessionId,
+    },
   });
 
-  return data as TUserInsightAnalysis;
+  return data as TRecallResultData;
 };

@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Ellipsis,
+  Loader,
   Mic,
   Star,
   X,
@@ -18,6 +19,8 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStreamStore } from "@/store/stream-store";
 
 import { cn } from "@/lib/utils";
+import { useRecallInsightsQuery } from "@/services/stream/queries";
+import ActionPlan from "./action-plan";
 
 const TAG_COLORS = ["#e7ffdf", "#fde68a", "#ffe5cb", "#dbeafe", "#ede9fe"];
 
@@ -28,10 +31,17 @@ export function InsightCardDetails() {
 
   const cardData = useStreamStore((s) => s.cardData);
   const recallResultData = useStreamStore((s) => s.recallResultData);
+  const sessionId = useStreamStore((s) => s.sessionId);
 
-  const hits = recallResultData?.hits ?? [];
-  const decision = recallResultData?.decision;
-  const actionPlan = recallResultData?.action_plan;
+  const hitsCount = recallResultData?.hits_count ?? 0;
+
+  const { data, isPending, isError, refetch } = useRecallInsightsQuery({
+    recallAnchor: cardData.recall_anchor!,
+    sessionId,
+  });
+
+  const hits = data?.hits || [];
+  console.log(JSON.stringify(data));
 
   const present = async () => {
     await sheet.current?.present(1);
@@ -188,17 +198,20 @@ export function InsightCardDetails() {
         </Text>
 
         {/* Referenced Memory Row */}
-        {hits.length > 0 && (
+        {/* {hitsCount > 0 && ( */}
+        <>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Referenced Memory, ${hits.length} items`}
+            accessibilityLabel={`Referenced Memory, ${hitsCount} items`}
             className={cn(
-              "flex-row items-center justify-between rounded-2xl border px-5 py-4 mb-6",
+              "flex-row items-center justify-between rounded-2xl border px-5 py-4",
+              isError ? "mb-2" : "mb-6",
               colorScheme === "dark"
                 ? "border-zinc-700 bg-zinc-800/50 active:bg-zinc-700"
                 : "border-gray-200 bg-slate-100 active:bg-gray-50",
             )}
             onPress={present}
+            disabled={isPending}
           >
             <View className="flex-row items-center gap-3">
               <Text
@@ -209,222 +222,50 @@ export function InsightCardDetails() {
               </Text>
               <View className="size-7 rounded-full bg-primary items-center justify-center">
                 <Text className="text-primary-foreground text-xs font-bold">
-                  {hits.length}
+                  {hitsCount}
                 </Text>
               </View>
             </View>
-            <ChevronRight
-              size={20}
-              color={colorScheme === "dark" ? "#a1a1a1" : "#6b7280"}
-            />
+            {isPending ? (
+              <Loader
+                size={20}
+                className="animate-spin"
+                color={colorScheme === "dark" ? "#a1a1a1" : "#6b7280"}
+              />
+            ) : (
+              <ChevronRight
+                size={20}
+                color={colorScheme === "dark" ? "#a1a1a1" : "#6b7280"}
+              />
+            )}
           </Pressable>
-        )}
+          {isError && (
+            <View className="flex-row items-center justify-between px-2 mb-6">
+              <Text
+                className="text-destructive text-sm"
+                style={{ fontFamily: "Urbanist_500Medium" }}
+              >
+                Failed to load referenced memories
+              </Text>
+              <Pressable
+                onPress={() => refetch()}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading referenced memories"
+                hitSlop={8}
+              >
+                <Text
+                  className="text-primary text-sm font-semibold"
+                  style={{ fontFamily: "Urbanist_600SemiBold" }}
+                >
+                  Retry
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </>
 
         {/* Action Plan / Recall Section */}
-        {decision && (
-          <View
-            className={cn(
-              "rounded-2xl border p-5 mb-6",
-              colorScheme === "dark"
-                ? "border-zinc-700 bg-zinc-800/50"
-                : "border-gray-200 bg-white",
-            )}
-          >
-            {/* Title & Subtitle */}
-            {actionPlan ? (
-              <>
-                <Text
-                  className="text-foreground text-xl font-bold mb-1"
-                  style={{ fontFamily: "Urbanist_700Bold" }}
-                >
-                  {actionPlan.title}
-                </Text>
-                <Text
-                  className="text-muted-foreground text-sm mb-5 leading-5"
-                  style={{ fontFamily: "Urbanist_400Regular" }}
-                >
-                  Generated based on recurring {actionPlan.related_theme}{" "}
-                  friction in the last{" "}
-                  {recallResultData?.pattern_analysis?.window_days ?? 30} days.
-                </Text>
-              </>
-            ) : (
-              <Text
-                className="text-foreground text-xl font-bold mb-5"
-                style={{ fontFamily: "Urbanist_700Bold" }}
-              >
-                Recall Summary
-              </Text>
-            )}
-
-            {/* Divider */}
-            <View
-              className={cn(
-                "mb-5",
-                colorScheme === "dark"
-                  ? "border-zinc-700"
-                  : "border-dashed border-gray-200",
-              )}
-            />
-
-            {/* Status */}
-            <View
-              className={cn(
-                "rounded-xl px-5 py-4 mb-5",
-                colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
-              )}
-            >
-              <Text
-                className="text-foreground text-base font-semibold mb-2"
-                style={{ fontFamily: "Urbanist_600SemiBold" }}
-              >
-                Status
-              </Text>
-              <View
-                className="self-start rounded-full px-4 py-1.5"
-                style={{
-                  backgroundColor: actionPlan ? "#dcfce7" : "#dbeafe",
-                }}
-              >
-                <Text
-                  className="text-sm font-medium"
-                  style={{
-                    fontFamily: "Urbanist_500Medium",
-                    color: actionPlan ? "#16a34a" : "#2563eb",
-                  }}
-                >
-                  {actionPlan ? "Action Created" : "Recall Only"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Recommended Steps — only when action_plan exists */}
-            {actionPlan && actionPlan.recommended_steps.length > 0 && (
-              <>
-                {/* Divider */}
-                <View
-                  className={cn(
-                    "border-b mb-5",
-                    colorScheme === "dark"
-                      ? "border-zinc-700"
-                      : "border-dashed border-gray-200",
-                  )}
-                />
-
-                <View
-                  className={cn(
-                    "rounded-xl px-5 py-4 mb-5",
-                    colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
-                  )}
-                >
-                  <Text
-                    className="text-foreground text-base font-semibold mb-4"
-                    style={{ fontFamily: "Urbanist_600SemiBold" }}
-                  >
-                    Recommended Steps
-                  </Text>
-                  {actionPlan.recommended_steps.map((step, index) => (
-                    <View
-                      key={step}
-                      className="flex-row items-center gap-3 mb-3"
-                    >
-                      <View className="size-8 rounded-full border border-primary/30 items-center justify-center">
-                        <Text
-                          className="text-primary text-sm font-semibold"
-                          style={{ fontFamily: "Urbanist_600SemiBold" }}
-                        >
-                          {index + 1}
-                        </Text>
-                      </View>
-                      <Text
-                        className="text-foreground text-sm flex-1 leading-5"
-                        style={{ fontFamily: "Urbanist_400Regular" }}
-                      >
-                        {step}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-
-            {/* Theme */}
-            {actionPlan?.related_theme && (
-              <>
-                <View
-                  className={cn(
-                    "border-b mb-5",
-                    colorScheme === "dark"
-                      ? "border-zinc-700"
-                      : "border-dashed border-gray-200",
-                  )}
-                />
-
-                <View
-                  className={cn(
-                    "rounded-xl px-5 py-4 mb-5",
-                    colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
-                  )}
-                >
-                  <Text
-                    className="text-foreground text-base font-semibold mb-2"
-                    style={{ fontFamily: "Urbanist_600SemiBold" }}
-                  >
-                    Theme
-                  </Text>
-                  <View
-                    className="self-start rounded-full px-4 py-1.5"
-                    style={{ backgroundColor: "#f1f5f9" }}
-                  >
-                    <Text
-                      className="text-foreground text-sm font-medium"
-                      style={{ fontFamily: "Urbanist_500Medium" }}
-                    >
-                      {actionPlan.related_theme}
-                    </Text>
-                  </View>
-                </View>
-              </>
-            )}
-
-            {/* Confidence Score */}
-            {actionPlan && actionPlan.confidence != null && (
-              <>
-                <View
-                  className={cn(
-                    "border-b mb-5",
-                    colorScheme === "dark"
-                      ? "border-zinc-700"
-                      : "border-dashed border-gray-200",
-                  )}
-                />
-
-                <View
-                  className={cn(
-                    "rounded-xl px-5 py-4",
-                    colorScheme === "dark" ? "bg-zinc-800" : "bg-gray-50",
-                  )}
-                >
-                  <Text
-                    className="text-foreground text-base font-semibold mb-2"
-                    style={{ fontFamily: "Urbanist_600SemiBold" }}
-                  >
-                    Confidence Score
-                  </Text>
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{
-                      fontFamily: "Urbanist_600SemiBold",
-                      color: "#16a34a",
-                    }}
-                  >
-                    {actionPlan.confidence.toFixed(2)}
-                  </Text>
-                </View>
-              </>
-            )}
-          </View>
-        )}
+        <ActionPlan recallResult={recallResultData} />
 
         {/* FAB spacer */}
         <View className="h-16" />
@@ -491,9 +332,9 @@ export function InsightCardDetails() {
             <View className="size-7 rounded-full bg-primary items-center justify-center">
               <Text
                 className="text-primary-foreground text-xs font-bold"
-                accessibilityLabel={`${hits.length} memories`}
+                accessibilityLabel={`${hitsCount} memories`}
               >
-                {hits.length}
+                {hitsCount}
               </Text>
             </View>
           </View>
