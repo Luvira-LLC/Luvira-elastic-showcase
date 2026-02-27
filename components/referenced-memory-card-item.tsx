@@ -1,3 +1,4 @@
+import { toPercentage } from "@/lib/helpers";
 import { Star } from "lucide-react-native";
 import React from "react";
 import { View } from "react-native";
@@ -33,7 +34,7 @@ export default function ReferencedMemoryCardItem({
       }}
       accessible
       accessibilityRole="summary"
-      accessibilityLabel={`Memory ${index + 1}. ${hit.insight.anchor_text}. Similarity ${hit.similarity_score.toFixed(2)}`}
+      accessibilityLabel={`Memory ${index + 1}. ${hit.insight.anchor_text}. Similarity ${toPercentage(hit.similarity_score)}`}
     >
       <View className="flex-row items-center justify-between mb-4">
         <View className="flex-row items-center gap-2">
@@ -97,7 +98,7 @@ export default function ReferencedMemoryCardItem({
           className="text-base font-bold"
           style={{ fontFamily: "Urbanist_700Bold", color: "#fff" }}
         >
-          {hit.similarity_score.toFixed(2)}
+          {toPercentage(hit.similarity_score)}
         </Text>
       </View>
     </View>
