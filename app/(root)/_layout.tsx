@@ -1,0 +1,17 @@
+import { Stack } from "expo-router";
+import React from "react";
+
+export default function RootLayout() {
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="recording" />
+      <Stack.Screen name="generating-insight" />
+      <Stack.Screen name="insight-card-details" />
+    </Stack>
+  );
+}

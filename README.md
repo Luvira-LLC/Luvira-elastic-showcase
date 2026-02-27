@@ -1,124 +1,50 @@
-Luvira Elastic Showcase
-Privacy-Preserving Contextual Memory UX built on Elasticsearch
-This repository is the public interface showcase of Luvira’s Contextual Memory System.
-It demonstrates how Luvira transforms from a stateless AI into a privacy-preserving contextual system — without storing raw audio or transcripts.
+# Welcome to your Expo app 👋
 
- This repository intentionally excludes proprietary backend logic and search heuristics.
- Purpose
-Luvira solves the privacy vs personalization paradox.
-Instead of storing:
- Raw audio
- Full transcripts
- Sensitive user data
-We store:
-Sanitized Insight Objects
-Structured summaries (anchor_text)
-Thematic metadata
-Vector embeddings
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-This repo showcases:
-Memory Badge UX
-Context Drawer UI
-Thinking / Recall states
-Fail-Open recall wrapper
-Strict TypeScript/Zod validation
+## Get started
 
-Architecture Overview
-Public Layer (This Repo):
-TypeScript contracts
-Zod schema validation
-Mock recall adapter
-Fail-open wrapper
-Trust UX components
-Private Layer (Not Included):
-Insight derivation pipeline
-PII sanitization engine
-Embedding generation
-Elasticsearch index mappings
-Ranking heuristics
-Production prompts
- Privacy Design Principles
-Luvira’s memory layer:
-Does not persist raw audio
-Does not store full transcripts
-Indexes only sanitized summaries
-Hashes session identifiers
-Enforces schema versioning
-Fails gracefully if memory is unavailable
-The system is designed to be:
-Privacy-first
-Versioned
-Auditable
-Resilient
- Core Concepts
-InsightObject
-A sanitized memory unit:
-id
-schema_version
-timestamp
-anchor_text
-themes_array
-snippet (optional, derived)
-source_session_hash (optional, hashed)
-RecallResult
-Returns:
-Top 3 similar memories
-similarity_score (0–1)
-latency_ms
-Fail-Open Design
-If Elasticsearch is unavailable:
-No crash
-No 500 error
-Returns empty memory array
-UX continues normally
-Trust UX Components
-Memory Badge
-Appears when historical context is used.
-Memory Drawer
-Displays:
-Date
-Sanitized summary
-Optional snippet
-Thinking State
-If recall latency > 1s:
-“Consulting past sessions…”
-“Synthesizing context…”
- Running the Demo
-Bash
-Copy code
-npm install
-npm start
-The public demo uses a mock recall adapter.
-No real Elasticsearch connection is included in this repository.
-Repository Structure
+1. Install dependencies
 
+   ```bash
+   npm install
+   ```
 
-src/
-  recall/
-    schema.ts
-    contract.ts
-    failOpen.ts
-    mockAdapter.ts
-  components/
-    MemoryBadge.tsx
-    MemoryDrawer.tsx
-    ThinkingState.tsx
- Production-Grade Standards
-Strict TypeScript types
-Zod runtime validation
-No hardcoded secrets
-.env.example included
-Fail-open architecture
-Similarity logging
-Latency tracking
-Clean documentation
-Strategic Positioning
-This showcase demonstrates:
-Scalable contextual AI architecture
-Enterprise-ready data contracts
-Privacy-by-design memory indexing
-UX transparency in AI reasoning
-Infrastructure moat via vector search
-License
-MIT License
+2. Start the app
 
+   ```bash
+   npx expo start
+   ```
+
+In the output, you'll find options to open the app in a
+
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Get a fresh project
+
+When you're ready, run:
+
+```bash
+npm run reset-project
+```
+
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+
+## Learn more
+
+To learn more about developing your project with Expo, look at the following resources:
+
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+
+## Join the community
+
+Join our community of developers creating universal apps.
+
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
